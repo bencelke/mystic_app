@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../config/dev_flags.dart';
 import '../core/i18n/app_locale.dart';
 import '../core/i18n/locale_controller.dart';
 import '../core/i18n/strings.dart';
@@ -127,7 +128,7 @@ class _TopBar extends StatelessWidget {
               _TopNavLink(
                 label: AppStrings.t(locale, 'nav_archive'),
                 isActive: currentSection == 'archive',
-                isLocked: true,
+                isLocked: !kDevUnlockAll,
                 onTap: () => onSelectSection('archive'),
               ),
               const SizedBox(width: 16),
@@ -312,12 +313,12 @@ class _Sidebar extends StatelessWidget {
           const SizedBox(height: 8),
           _SidebarItem(
             label: AppStrings.t(locale, 'sidebar_archive'),
-            isLocked: true,
+            isLocked: !kDevUnlockAll,
           ),
           const SizedBox(height: 8),
           _SidebarItem(
             label: AppStrings.t(locale, 'sidebar_profile'),
-            isLocked: true,
+            isLocked: !kDevUnlockAll,
           ),
         ],
       ),
@@ -341,36 +342,46 @@ class _SidebarItem extends StatelessWidget {
     final color =
         isActive ? AppColors.textPrimary : AppColors.textPrimary.withOpacity(0.7);
 
-    return Row(
-      children: [
-        Container(
-          width: 4,
-          height: 24,
-          decoration: BoxDecoration(
-            color: isActive ? AppColors.mutedGold : AppColors.background,
-            borderRadius: BorderRadius.circular(999),
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Coming soon'),
           ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Row(
-            children: [
-              Text(
-                label,
-                style: TextStyle(color: color),
-              ),
-              if (isLocked) ...[
-                const SizedBox(width: 4),
-                Icon(
-                  Icons.lock,
-                  size: 14,
-                  color: color,
+        );
+      },
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 24,
+            decoration: BoxDecoration(
+              color: isActive ? AppColors.mutedGold : AppColors.background,
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Row(
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(color: color),
                 ),
+                if (isLocked) ...[
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.lock,
+                    size: 14,
+                    color: color,
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

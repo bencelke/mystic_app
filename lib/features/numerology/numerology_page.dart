@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../config/dev_flags.dart';
 import '../../shared/widgets/mystic_card.dart';
 import '../../shared/widgets/primary_button.dart';
 import '../../shared/widgets/section_title.dart';
@@ -32,9 +33,17 @@ class NumerologyPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const PrimaryButton(
+          PrimaryButton(
             label: 'Calculate',
-            onPressed: null,
+            onPressed: kDevUnlockAll
+                ? () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Coming soon'),
+                      ),
+                    );
+                  }
+                : null,
           ),
           const SizedBox(height: 24),
           MysticCard(

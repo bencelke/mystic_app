@@ -1,0 +1,2 @@
+const bool kDevUnlockAll = true;
+
