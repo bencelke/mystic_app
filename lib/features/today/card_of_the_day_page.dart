@@ -3,10 +3,14 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../config/dev_flags.dart';
+import '../../core/i18n/app_locale.dart';
 import '../../core/i18n/locale_controller.dart';
 import '../../core/i18n/strings.dart';
 import '../../core/utils/card_of_day_service.dart';
+import '../../core/utils/numerology_service.dart';
+import '../../core/utils/user_profile_local.dart';
 import '../../models/card_of_day_item.dart';
+import '../../models/numerology_reading.dart';
 import '../../shared/widgets/locked_section.dart';
 import '../../shared/widgets/mystic_card.dart';
 import '../../shared/widgets/primary_button.dart';
@@ -30,6 +34,9 @@ class _CardOfTheDayPageState extends State<CardOfTheDayPage> {
   bool _showPremiumDetails = false;
   late final CardOfDayItem _todayCard;
   bool _heroVisible = false;
+  bool _loadingDob = true;
+  DateTime? _dob;
+  NumerologyReading? _numerologyReading;
 
   @override
   void initState() {
@@ -41,6 +48,45 @@ class _CardOfTheDayPageState extends State<CardOfTheDayPage> {
           _heroVisible = true;
         });
       }
+    });
+    _loadDob();
+  }
+
+  Future<void> _loadDob() async {
+    final dob = await getDob();
+    if (!mounted) return;
+    setState(() {
+      _loadingDob = false;
+      _dob = dob;
+      if (dob != null) {
+        _numerologyReading = buildReading(
+          dob,
+          DateTime.now(),
+          widget.controller.current,
+        );
+      }
+    });
+  }
+
+  Future<void> _showDobPicker(BuildContext context) async {
+    final locale = widget.controller.current;
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _dob ?? now.subtract(const Duration(days: 365 * 25)),
+      firstDate: DateTime(1900),
+      lastDate: now,
+    );
+    if (picked == null || !mounted) return;
+    await setDob(picked);
+    if (!mounted) return;
+    setState(() {
+      _dob = picked;
+      _numerologyReading = buildReading(
+        picked,
+        DateTime.now(),
+        widget.controller.current,
+      );
     });
   }
 
@@ -112,6 +158,210 @@ class _CardOfTheDayPageState extends State<CardOfTheDayPage> {
             ),
           const SizedBox(height: 32),
           _buildDetailGrid(context),
+          const SizedBox(height: 32),
+          if (!_loadingDob) ...[
+            _buildNumerologySection(context),
+            const SizedBox(height: 32),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNumerologySection(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final locale = widget.controller.current;
+
+    if (_numerologyReading == null) {
+      return MysticCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              AppStrings.t(locale, 'numerology_title'),
+              style: textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              width: 60,
+              height: 2,
+              color: AppColors.mutedGold,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              AppStrings.t(locale, 'numerology_setup_need_dob'),
+              style: textTheme.bodyMedium?.copyWith(
+                height: 1.5,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              AppStrings.t(locale, 'numerology_setup_bullet_life_path'),
+              style: textTheme.bodySmall?.copyWith(
+                height: 1.4,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              AppStrings.t(locale, 'numerology_setup_bullet_personal_day'),
+              style: textTheme.bodySmall?.copyWith(
+                height: 1.4,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () => _showDobPicker(context),
+              child: Text(
+                AppStrings.t(locale, 'numerology_add_dob'),
+                style: const TextStyle(color: AppColors.mutedGold),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final r = _numerologyReading!;
+    final isRu = locale == AppLocale.ru;
+    final text = isRu ? r.textRu : r.textEn;
+    final keywords = isRu ? r.keywordsRu : r.keywordsEn;
+    final lifePathHeader = AppStrings.t(locale, 'numerology_life_path_header');
+    final lifePathTitle = AppStrings.t(locale, 'numerology_lp_${r.lifePath}');
+
+    return MysticCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            AppStrings.t(locale, 'numerology_title'),
+            style: textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: 60,
+            height: 2,
+            color: AppColors.mutedGold,
+          ),
+          const SizedBox(height: 20),
+          Text(
+            AppStrings.t(locale, 'numerology_personal_day'),
+            style: textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${r.personalDay}',
+            style: textTheme.headlineLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppColors.mutedGold,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            AppStrings.t(locale, 'numerology_explain_personal_day_generic'),
+            style: textTheme.bodySmall?.copyWith(
+              height: 1.4,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            '$lifePathHeader ${r.lifePath} — $lifePathTitle',
+            style: textTheme.titleSmall?.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            AppStrings.t(locale, 'numerology_explain_life_path'),
+            style: textTheme.bodySmall?.copyWith(
+              height: 1.4,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: keywords
+                .map(
+                  (k) => Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.mutedGold),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      k,
+                      style: textTheme.bodySmall?.copyWith(
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+          if (r.personalDay == 7) ...[
+            const SizedBox(height: 12),
+            Text(
+              AppStrings.t(locale, 'numerology_day7_what_this_means'),
+              style: textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              AppStrings.t(locale, 'numerology_keyword_reflection'),
+              style: textTheme.bodySmall?.copyWith(
+                height: 1.4,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              AppStrings.t(locale, 'numerology_keyword_intuition'),
+              style: textTheme.bodySmall?.copyWith(
+                height: 1.4,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              AppStrings.t(locale, 'numerology_keyword_silence'),
+              style: textTheme.bodySmall?.copyWith(
+                height: 1.4,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              AppStrings.t(locale, 'numerology_keyword_understanding'),
+              style: textTheme.bodySmall?.copyWith(
+                height: 1.4,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          Text(
+            text,
+            style: textTheme.bodyMedium?.copyWith(
+              height: 1.5,
+            ),
+          ),
         ],
       ),
     );
