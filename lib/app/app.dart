@@ -4,7 +4,7 @@ import '../core/i18n/app_locale.dart';
 import '../core/i18n/locale_controller.dart';
 import '../core/routing/app_router.dart';
 import '../theme/app_theme.dart';
-import 'web_app_shell.dart';
+import 'mobile_app_root.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -31,7 +31,7 @@ class _AppState extends State<App> {
           title: 'Mystic',
           theme: AppTheme.light(),
           locale: localeController.current.toLocale(),
-          home: WebAppShell(controller: localeController),
+          home: MobileAppRoot(controller: localeController),
           onGenerateRoute: AppRouter.onGenerateRoute,
         );
       },
