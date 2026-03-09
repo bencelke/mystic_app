@@ -3,8 +3,14 @@ import 'package:flutter/material.dart';
 import '../../core/i18n/app_locale.dart';
 import '../../core/i18n/locale_controller.dart';
 import '../../core/i18n/strings.dart';
+import '../../core/utils/card_of_day_service.dart';
+import '../../core/utils/numerology_service.dart';
+import '../../data/numerology_meanings.dart';
+import '../../models/card_of_day_item.dart';
 import '../../shared/widgets/mystic_card.dart';
 import '../../theme/app_colors.dart';
+import '../card/card_screen.dart';
+import '../number/number_screen.dart';
 
 class TodayScreen extends StatelessWidget {
   const TodayScreen({super.key, required this.controller});
@@ -15,6 +21,17 @@ class TodayScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final locale = controller.current;
     final textTheme = Theme.of(context).textTheme;
+
+    final CardOfDayItem card = getCardOfTheDay();
+    final String cardPreview = cardPreviewForLocale(card, locale);
+
+    final DateTime today = DateTime.now();
+    final int coreNumber =
+        reduceNumber(sumDigits(today.day) + sumDigits(today.month) + sumDigits(today.year));
+    final meaning = getMeaningForNumber(coreNumber);
+    final bool isRu = locale == AppLocale.ru;
+    final String numberTitle = isRu ? meaning.titleRu : meaning.titleEn;
+    final String numberShort = isRu ? meaning.shortTextRu : meaning.shortTextEn;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -46,6 +63,13 @@ class TodayScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               MysticCard(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => CardScreen(controller: controller),
+                    ),
+                  );
+                },
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -64,18 +88,10 @@ class TodayScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      AppStrings.t(locale, 'card_subtitle'),
+                      cardPreview,
                       style: textTheme.bodyMedium?.copyWith(
                         color: AppColors.textSecondary,
                         height: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      AppStrings.t(locale, 'today_card_placeholder'),
-                      style: textTheme.bodySmall?.copyWith(
-                        color: AppColors.mutedGold,
-                        fontStyle: FontStyle.italic,
                       ),
                     ),
                   ],
@@ -88,6 +104,13 @@ class TodayScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               MysticCard(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => NumberScreen(controller: controller),
+                    ),
+                  );
+                },
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -98,7 +121,15 @@ class TodayScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      AppStrings.t(locale, 'numerology_personal_day'),
+                      '$coreNumber',
+                      style: textTheme.headlineMedium?.copyWith(
+                        color: AppColors.mutedGold,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      numberTitle,
                       style: textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
@@ -106,18 +137,10 @@ class TodayScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      AppStrings.t(locale, 'today_number_placeholder'),
+                      numberShort,
                       style: textTheme.bodyMedium?.copyWith(
                         color: AppColors.textSecondary,
                         height: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      AppStrings.t(locale, 'today_number_hint'),
-                      style: textTheme.bodySmall?.copyWith(
-                        color: AppColors.mutedGold,
-                        fontStyle: FontStyle.italic,
                       ),
                     ),
                   ],

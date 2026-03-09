@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../core/i18n/locale_controller.dart';
 import '../../core/i18n/strings.dart';
+import '../../core/utils/card_of_day_service.dart';
+import '../../models/card_of_day_item.dart';
 import '../../shared/widgets/mystic_card.dart';
 import '../../theme/app_colors.dart';
 
@@ -14,6 +16,9 @@ class CardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final locale = controller.current;
     final textTheme = Theme.of(context).textTheme;
+
+    final CardOfDayItem card = getCardOfTheDay();
+    final String fullText = cardTextForLocale(card, locale);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -50,15 +55,15 @@ class CardScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      AppStrings.t(locale, 'card_screen_placeholder_title'),
+                      AppStrings.t(locale, 'card_of_day_title'),
                       style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      AppStrings.t(locale, 'card_screen_placeholder_body'),
+                      fullText,
                       style: textTheme.bodyMedium?.copyWith(
                         color: AppColors.textSecondary,
                         height: 1.5,
