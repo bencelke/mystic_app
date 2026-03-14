@@ -17,6 +17,8 @@ class AppColors {
   // Surfaces
   static const Color card = Color(0xFFFFFFFF);
   static const Color border = Color(0xFFE5E5E5);
+  static const Color surfaceIvory = Color(0xFFF8F6F0);
+  static const Color surfaceCream = Color(0xFFF5F1E8);
 
   // States
   static const Color success = Color(0xFF2E7D32);
